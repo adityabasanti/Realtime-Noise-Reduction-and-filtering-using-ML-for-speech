@@ -13,6 +13,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -31,11 +32,14 @@ import com.nexmo.client.request_listener.NexmoRequestListener;
 
 
 
+
+
 public class MainActivity extends AppCompatActivity {
 
     private NexmoClient client;
     private String otherUser = "";
     private NexmoCall onGoingCall;
+
 
     private TextView connectionStatusTextView;
     private TextView waitingForIncomingCallTextView;
@@ -48,32 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     private NexmoCallEventListener callListener;
-
-
-
-
-    private void loginAsAlice() {
-        otherUser = "Bob";
-
-        client.login("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTg2NTUwMDAsImp0aSI6IjcyODliNmYwLTc2ZmYtMTFlZS1hMzJkLWIxMzUwNTJiMDkwZSIsImFwcGxpY2F0aW9uX2lkIjoiMzQ4MmEyMDktZmZmMC00YWUwLWFlNWEtMThmYTA4N2I0Mjg1Iiwic3ViIjoiQWxpY2UiLCJleHAiOjE2OTg2NTUwMjIxNDIsImFjbCI6eyJwYXRocyI6eyIvKi91c2Vycy8qKiI6e30sIi8qL2NvbnZlcnNhdGlvbnMvKioiOnt9LCIvKi9zZXNzaW9ucy8qKiI6e30sIi8qL2RldmljZXMvKioiOnt9LCIvKi9pbWFnZS8qKiI6e30sIi8qL21lZGlhLyoqIjp7fSwiLyovYXBwbGljYXRpb25zLyoqIjp7fSwiLyovcHVzaC8qKiI6e30sIi8qL2tub2NraW5nLyoqIjp7fSwiLyovbGVncy8qKiI6e319fX0.k6gJMsz-HRgmv4-p_VrBM5F-YHvyWrCNIpIVp8sF7pUWsgGkxby3p9oSDXOVYz6kEiNTFQcNT6HzRMQbC921NxhLPf8zp2YgHkKP7nRrx9OtRfXPga0erCa9iBoQuwcHGW31TkdfUcvg-IAhmy9RqmIqxMh5wYxa1NB64mpecfbrji0aj7YXRIFqgLxZSiiXXPUD8goGF9KYAh8cQqunJ6SeZR01L41tgxbv6zkBw7wn7e5SOY4qnyyZ2xEjmA3AglEasnX3yzv2EL4Y_-T1G7LuHTFo0SwFDGP4_9zX4WJgMPvnQzO3XssAzMic5V_M0vEpVBjjN4vhlalVPZftFQ");
-    }
-
-    private void loginAsBob() {
-        otherUser = "Alice";
-
-        client.login("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTg2NTUwNTAsImp0aSI6IjkwOTdhNzYwLTc2ZmYtMTFlZS1iZGEzLTgzYzNkNmNiOWEwZiIsImFwcGxpY2F0aW9uX2lkIjoiMzQ4MmEyMDktZmZmMC00YWUwLWFlNWEtMThmYTA4N2I0Mjg1Iiwic3ViIjoiQm9iIiwiZXhwIjoxNjk4NjU1MDcyNTY2LCJhY2wiOnsicGF0aHMiOnsiLyovdXNlcnMvKioiOnt9LCIvKi9jb252ZXJzYXRpb25zLyoqIjp7fSwiLyovc2Vzc2lvbnMvKioiOnt9LCIvKi9kZXZpY2VzLyoqIjp7fSwiLyovaW1hZ2UvKioiOnt9LCIvKi9tZWRpYS8qKiI6e30sIi8qL2FwcGxpY2F0aW9ucy8qKiI6e30sIi8qL3B1c2gvKioiOnt9LCIvKi9rbm9ja2luZy8qKiI6e30sIi8qL2xlZ3MvKioiOnt9fX19.HYP8mfjxhA8OsYad1KIEeew5uSKZroFUJWBfZhJi5lv7clOMkPUctao43CpNJNmtv6bYm8e41vTf1Vvn7UN9j4Q458d1V5YwAs9xezcjEqmksvKv-pHSwukFn76mAAZXlcMOA7IKQj_WRhXz8OoHgXZlj9i9iPi1nuPvlI30ZNBPF82BQ2Lg0ugj0cqfUPqYV0Dz9gVATLtCEID05BxHvoWkk7FWSk9fiL56T7Ry4ik5OneghusNwZPlLXd_SYGE7VSRpqsuBYLm6rLcTjbqSDsPLWnXckNakMYvXMRK21bPhC3-eebtgFAODOMS4CaUpu_mvf6_tyxvGEVGi0M_1w");
-        // TODO: update body
-    }
-
-    private void hideUI() {
-        LinearLayout content = findViewById(R.id.content);
-
-        for (int i = 0; i < content.getChildCount(); i++) {
-            View view = content.getChildAt(i);
-            view.setVisibility(View.GONE);
-        }
-    }
-
+    private String TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,45 +74,78 @@ public class MainActivity extends AppCompatActivity {
         rejectCallButton = findViewById(R.id.rejectCallButton);
         endCallButton = findViewById(R.id.endCallButton);
 
+
+        // Initialize the client object
+        client = new NexmoClient.Builder().build(this);
+
+// Add null checks before calling any methods on the client object
+        if (client != null) {
+            // Set the connection listener
+            client.setConnectionListener((connectionStatus, connectionStatusReason) -> {
+                runOnUiThread(() -> {
+                    connectionStatusTextView.setText(connectionStatus.toString());
+                });
+
+                if (connectionStatus == NexmoConnectionListener.ConnectionStatus.CONNECTED) {
+                    runOnUiThread(() -> {
+                        hideUI();
+                        connectionStatusTextView.setVisibility(View.VISIBLE);
+                        startCallButton.setVisibility(View.VISIBLE);
+                        waitingForIncomingCallTextView.setVisibility(View.VISIBLE);
+                    });
+                }
+            });
+
+            // Add incoming call listener
+            client.addIncomingCallListener(it -> {
+                onGoingCall = it;
+
+                runOnUiThread(() -> {
+                    hideUI();
+                    answerCallButton.setVisibility(View.VISIBLE);
+                    rejectCallButton.setVisibility(View.VISIBLE);
+                });
+            });
+        } else {
+            // Handle null client object
+            Log.e(TAG, "Client object is null");
+        }
+
         loginAsAlice.setOnClickListener(v -> loginAsAlice());
         loginAsBob.setOnClickListener(v -> loginAsBob());
 
-        client = new NexmoClient.Builder().build(this);
-//        NexmoClient client = new NexmoClient.Builder().build(this);
-        client.setConnectionListener((connectionStatus, connectionStatusReason) -> {
-            runOnUiThread(() -> {
-                connectionStatusTextView.setText(connectionStatus.toString());
+        if (client!=null){
+            client.setConnectionListener((connectionStatus, connectionStatusReason) -> {
+                runOnUiThread(() -> {
+                    connectionStatusTextView.setText(connectionStatus.toString());
+                });
+
+                if (connectionStatus == NexmoConnectionListener.ConnectionStatus.CONNECTED) {
+                    runOnUiThread(() -> {
+                        hideUI();
+                        connectionStatusTextView.setVisibility(View.VISIBLE);
+                        startCallButton.setVisibility(View.VISIBLE);
+                        waitingForIncomingCallTextView.setVisibility(View.VISIBLE);
+                    });
+                }
             });
 
-            if (connectionStatus == NexmoConnectionListener.ConnectionStatus.CONNECTED) {
+            client.addIncomingCallListener(it -> {
+                onGoingCall = it;
+
                 runOnUiThread(() -> {
                     hideUI();
-                    connectionStatusTextView.setVisibility(View.VISIBLE);
-                    startCallButton.setVisibility(View.VISIBLE);
-                    waitingForIncomingCallTextView.setVisibility(View.VISIBLE);
+                    answerCallButton.setVisibility(View.VISIBLE);
+                    rejectCallButton.setVisibility(View.VISIBLE);
                 });
-            }
-        });
-
-        client.addIncomingCallListener(it -> {
-            onGoingCall = it;
-
-            runOnUiThread(() -> {
-                hideUI();
-                answerCallButton.setVisibility(View.VISIBLE);
-                rejectCallButton.setVisibility(View.VISIBLE);
             });
-        });
+        }
 
-        answerCallButton.setOnClickListener(view -> {
-            answerCall();
-        });
-        rejectCallButton.setOnClickListener(view -> {
-            rejectCall();
-        });
-        endCallButton.setOnClickListener(view -> {
-            endCall();
-        });
+
+
+        answerCallButton.setOnClickListener(view -> { answerCall();});
+        rejectCallButton.setOnClickListener(view -> { rejectCall();});
+        endCallButton.setOnClickListener(view -> { endCall();});
 
 
         callListener = new NexmoCallEventListener() {
@@ -160,34 +172,29 @@ public class MainActivity extends AppCompatActivity {
 
         startCallButton.setOnClickListener(v -> startCall());
 
+    }
 
-
-
+    private void loginAsAlice() {
+        otherUser = "Bob";
+        client.login("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTg5MDg0NDksImp0aSI6IjhlMjY0NzIwLTc5NGQtMTFlZS04YzMxLTNkMTg5MzlmN2VjYSIsImFwcGxpY2F0aW9uX2lkIjoiMzQ4MmEyMDktZmZmMC00YWUwLWFlNWEtMThmYTA4N2I0Mjg1Iiwic3ViIjoiQWxpY2UiLCJleHAiOjE2OTg5MDg0NzE1MzQsImFjbCI6eyJwYXRocyI6eyIvKi91c2Vycy8qKiI6e30sIi8qL2NvbnZlcnNhdGlvbnMvKioiOnt9LCIvKi9zZXNzaW9ucy8qKiI6e30sIi8qL2RldmljZXMvKioiOnt9LCIvKi9pbWFnZS8qKiI6e30sIi8qL21lZGlhLyoqIjp7fSwiLyovYXBwbGljYXRpb25zLyoqIjp7fSwiLyovcHVzaC8qKiI6e30sIi8qL2tub2NraW5nLyoqIjp7fSwiLyovbGVncy8qKiI6e319fX0.Z0ismGtqRD-7NSeqQEeIqPFek_0npcjgKd9wC7pdMvhKl-dACLjy8uXgvT7MRmNC8SJYOvS-AqHkdBaJ2M5c9iv1-DWYlQ_vvHjzUxCVHQQKN6lYPCCq7i9H9XaCVvC2Fh-sdV2KK6_-xFSvYzDm5oBDeJdm0e0wJboh4V-shwKpGwiNtV09TLdjEhY4uNd-ogJ8bMhhVjthkFgG5Ih9CBNP8-Nqp8mDS8ubqKBrWue1veT624MAa3YiLRP0ZqSZcW_TxydA7K6zI562NWr_11Tq-2UJBKDlfSyuyeqOzzwcYjSwqIX3FfQ3fJygNvN7rMG2ZTJxxeXXVwPINwcK8A");
 
     }
 
-    @SuppressLint("MissingPermission")
-    private void startCall() {
-        client.serverCall(otherUser, null, new NexmoRequestListener<NexmoCall>() {
-            @Override
-            public void onError(@NonNull NexmoApiError nexmoApiError) {
+    private void loginAsBob() {
+        otherUser = "Alice";
+        client.login("eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE2OTg5MDg3MzIsImp0aSI6IjM2YjFiNTUwLTc5NGUtMTFlZS05NGQyLWVmMDIxNWU4ODM1ZSIsImFwcGxpY2F0aW9uX2lkIjoiMzQ4MmEyMDktZmZmMC00YWUwLWFlNWEtMThmYTA4N2I0Mjg1Iiwic3ViIjoiQm9iIiwiZXhwIjoxNjk4OTA4NzU0MzA4LCJhY2wiOnsicGF0aHMiOnsiLyovdXNlcnMvKioiOnt9LCIvKi9jb252ZXJzYXRpb25zLyoqIjp7fSwiLyovc2Vzc2lvbnMvKioiOnt9LCIvKi9kZXZpY2VzLyoqIjp7fSwiLyovaW1hZ2UvKioiOnt9LCIvKi9tZWRpYS8qKiI6e30sIi8qL2FwcGxpY2F0aW9ucy8qKiI6e30sIi8qL3B1c2gvKioiOnt9LCIvKi9rbm9ja2luZy8qKiI6e30sIi8qL2xlZ3MvKioiOnt9fX19.k-R0anNnlh0DSZbP3IZ7QFCpKBG4vsReFsHaQ84GqrN3r4ba51uggVen4nA5F_yM3K4Ozg2XRkrLRo9KZPeQRhPXBw48E52tG1s2Jqdpz3UKW1kcA8mpoUgsyrF-kqNqm2uTxFomwpRQj8bpq5DQrFo7q88nqZG9yi0gdrLOVM-O7sO5mdyQQ95MDWWqUBM-No2MnElktCa6Xw91ag8VOSL518gZ1wiDCJjGFOCMHLutRszKTj8rqVtgI758c-zEZ4Afe23jfr69Ca9QHNXdALCDHexLl7cLDWXtn-u30_TKBumMDbh4U9DFinKRpM9q3VgFEXyy2dchNVJ0t7IPRg");
 
-            }
-
-            @Override
-            public void onSuccess(@Nullable NexmoCall call) {
-                runOnUiThread(() -> {
-                    hideUI();
-                    endCallButton.setVisibility(View.VISIBLE);
-                    waitingForIncomingCallTextView.setVisibility(View.INVISIBLE);
-                });
-
-                onGoingCall = call;
-
-                onGoingCall.addCallEventListener(callListener);
-            }
-        });
     }
+
+    private void hideUI() {
+        LinearLayout content = findViewById(R.id.content);
+
+        for (int i = 0; i < content.getChildCount(); i++) {
+            View view = content.getChildAt(i);
+            view.setVisibility(View.GONE);
+        }
+    }
+
 
     @SuppressLint("MissingPermission")
     private void answerCall() {
@@ -246,5 +253,29 @@ public class MainActivity extends AppCompatActivity {
         onGoingCall = null;
     }
 
+    @SuppressLint("MissingPermission")
+    private void startCall() {
+        client.serverCall(otherUser, null, new NexmoRequestListener<NexmoCall>() {
+            @Override
+            public void onError(@NonNull NexmoApiError nexmoApiError) {
+
+            }
+
+            @Override
+            public void onSuccess(@Nullable NexmoCall call) {
+                runOnUiThread(() -> {
+                    hideUI();
+                    endCallButton.setVisibility(View.VISIBLE);
+                    waitingForIncomingCallTextView.setVisibility(View.INVISIBLE);
+                });
+
+                onGoingCall = call;
+
+                onGoingCall.addCallEventListener(callListener);
+            }
+        });
+    }
+
 
 }
+
